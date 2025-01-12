@@ -1,0 +1,26 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "pnpm install",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["install"],
+      "problemMatcher": []
+    },
+    {
+      "label": "pnpm build",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["build"],
+      "problemMatcher": []
+    },
+    {
+      "label": "pnpm start",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["start"],
+      "problemMatcher": []
+    }
+  ]
+}
