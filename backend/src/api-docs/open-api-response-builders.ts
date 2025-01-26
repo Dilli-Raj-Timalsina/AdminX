@@ -1,9 +1,13 @@
 import { StatusCodes } from "http-status-codes";
 import type { z } from "zod";
 
-import { ServiceResponseSchema } from "@/common/models/serviceResponse";
+import { ServiceResponseSchema } from "@/common/models/service-response";
 
-export function createApiResponse(schema: z.ZodTypeAny, description: string, statusCode = StatusCodes.OK) {
+export function createApiResponse(
+  schema: z.ZodTypeAny,
+  description: string,
+  statusCode = StatusCodes.OK
+) {
   return {
     [statusCode]: {
       description,
@@ -15,4 +19,3 @@ export function createApiResponse(schema: z.ZodTypeAny, description: string, sta
     },
   };
 }
-

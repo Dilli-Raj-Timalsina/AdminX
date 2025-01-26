@@ -1,19 +1,21 @@
 import cors from "cors";
-import express, { type Express } from "express";
+import express, { Router, type Express } from "express";
 import helmet from "helmet";
 import { pino } from "pino";
-
-import { openAPIRouter } from "@/api-docs/openAPIRouter";
-import { healthCheckRouter } from "@/api/healthCheck/healthCheckRouter";
-import errorHandler from "@/common/middleware/errorHandler";
-import rateLimiter from "@/common/middleware/rateLimiter";
+import errorHandler from "@/common/middleware/error-handler";
+import rateLimiter from "@/common/middleware/rate-limiter";
 import { env } from "@/common/utils/envConfig";
-import { getEndPointsRouter } from "./api/getEndPoints/getEndPointsRouter";
+import { entityList } from "@/common/constants/entity-list";
+import generateCrudRoutes from "./api/crud/helpers/generate-crud-routes";
+import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
+import { healthCheckRouter } from "./api/health-check/health-check-router";
+import { openAPIRouter } from "./api-docs/open-api-router";
 
+const openApiRegistry: Array<OpenAPIRegistry> = [];
 const logger = pino({ name: "server start" });
 const app: Express = express();
 
-// Set the application to trust the reverse proxy
+// set the application to trust the reverse proxy
 app.set("trust proxy", true);
 
 // Middlewares
@@ -23,11 +25,14 @@ app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
 app.use(helmet());
 app.use(rateLimiter);
 
-// Request logging
-// app.use(pinoHttp());
+entityList.forEach((entity) => {
+  const crudRouter = Router();
+  // register crud routes
+  generateCrudRoutes(crudRouter);
+  app.use(`/${entity.dbConfig.tableName}`, crudRouter);
+});
 
 // Routes
-app.use("/get-endpoints", getEndPointsRouter);
 app.use("/health-check", healthCheckRouter);
 
 // Swagger UI
@@ -36,4 +41,4 @@ app.use(openAPIRouter);
 // Error handlers
 app.use(errorHandler());
 
-export { app, logger };
+export { app, logger, openApiRegistry };

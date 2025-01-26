@@ -2,11 +2,19 @@ import {
   OpenAPIRegistry,
   OpenApiGeneratorV3,
 } from "@asteasolutions/zod-to-openapi";
-
-import { healthCheckRegistry } from "@/api/healthCheck/healthCheckRouter";
+import {
+  CrudRegistry,
+  generateCrudPaths,
+} from "@/api/crud/helpers/generate-crud-paths";
+import { healthCheckRegistry } from "@/api/health-check/health-check-router";
+import { entityList } from "@/common/constants/entity-list";
 
 export function generateOpenAPIDocument() {
-  const registry = new OpenAPIRegistry([healthCheckRegistry]);
+  entityList.forEach((entity) => {
+    generateCrudPaths(entity);
+  });
+
+  const registry = new OpenAPIRegistry([healthCheckRegistry, CrudRegistry]);
   const generator = new OpenApiGeneratorV3(registry.definitions);
 
   return generator.generateDocument({
