@@ -51,7 +51,7 @@ const mapTypeToPostgres = (type: string): string => {
     case "text":
       return "TEXT";
     case "uuid":
-      return "UUID";
+      return "TEXT";
     default:
       throw new Error(`unsupported type: ${type}`);
   }

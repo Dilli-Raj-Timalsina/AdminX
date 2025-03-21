@@ -1,13 +1,6 @@
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
-import {
-  CrudSchema,
-  DeleteCrudSchema,
-  GetAllCrudSchema,
-  GetCrudSchema,
-  PatchCrudSchema,
-  PostCrudSchema,
-} from "../crud-model";
+import { generateCrudModels } from "../crud-model";
 import { IEntity } from "@/types/entity";
 import { createApiResponse } from "@/api-docs/open-api-response-builders";
 
@@ -15,50 +8,61 @@ const CrudRegistry = new OpenAPIRegistry();
 
 const generateCrudPaths = (entity: IEntity) => {
   const { dbConfig, display } = entity;
-  const path = `/${dbConfig.tableName}`;
+  const path = `/api/${dbConfig.tableName}`;
+  
+  // Generate schemas specific to this entity
+  const {
+    EntitySchema,
+    GetEntitySchema,
+    GetAllEntitySchema,
+    PostEntitySchema,
+    PatchEntitySchema,
+    DeleteEntitySchema
+  } = generateCrudModels(entity);
 
+  // GET /{entity}
   CrudRegistry.registerPath({
     method: "get",
     path: path,
     tags: [display.pluralName],
-    request: { params: GetAllCrudSchema.shape.query },
-    responses: createApiResponse(z.array(CrudSchema), "Success"),
+    request: { query: GetAllEntitySchema.shape.query },
+    responses: createApiResponse(z.array(EntitySchema), `List of ${display.pluralName}`),
   });
 
-  // GET /crud/{id}
+  // GET /{entity}/{id}
   CrudRegistry.registerPath({
     method: "get",
     path: `${path}/{id}`,
     tags: [display.pluralName],
-    request: { params: GetCrudSchema.shape.params },
-    responses: createApiResponse(CrudSchema, "Success"),
+    request: { params: GetEntitySchema.shape.params },
+    responses: createApiResponse(EntitySchema, display.singularName),
   });
 
-  // POST /crud
+  // POST /{entity}
   CrudRegistry.registerPath({
     method: "post",
     path: path,
     tags: [display.pluralName],
-    request: PostCrudSchema,
-    responses: createApiResponse(z.null(), "Success"),
+    request: PostEntitySchema,
+    responses: createApiResponse(EntitySchema, `Created ${display.singularName}`),
   });
 
-  // PATCH /crud/{id}
+  // PATCH /{entity}/{id}
   CrudRegistry.registerPath({
     method: "patch",
     path: `${path}/{id}`,
     tags: [display.pluralName],
-    request: PatchCrudSchema,
-    responses: createApiResponse(CrudSchema, "Success"),
+    request: PatchEntitySchema,
+    responses: createApiResponse(EntitySchema, `Updated ${display.singularName}`),
   });
 
-  // DELETE /crud/{id}
+  // DELETE /{entity}/{id}
   CrudRegistry.registerPath({
     method: "delete",
     path: `${path}/{id}`,
     tags: [display.pluralName],
-    request: { params: DeleteCrudSchema.shape.params },
-    responses: createApiResponse(z.null(), "Success"),
+    request: { params: DeleteEntitySchema.shape.params },
+    responses: createApiResponse(z.null(), `Deleted ${display.singularName}`),
   });
 };
 

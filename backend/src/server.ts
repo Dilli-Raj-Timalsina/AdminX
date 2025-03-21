@@ -4,7 +4,6 @@ import helmet from "helmet";
 import { pino } from "pino";
 import errorHandler from "@/common/middleware/error-handler";
 import rateLimiter from "@/common/middleware/rate-limiter";
-import { env } from "@/common/utils/envConfig";
 import { entityList } from "@/common/constants/entity-list";
 import generateCrudRoutes from "./api/crud/helpers/generate-crud-routes";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
@@ -21,22 +20,27 @@ app.set("trust proxy", true);
 // Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
+app.use(cors({
+  origin: '*',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
 app.use(helmet());
 app.use(rateLimiter);
 
 entityList.forEach((entity) => {
   const crudRouter = Router();
   // register crud routes
-  generateCrudRoutes(crudRouter);
-  app.use(`/${entity.dbConfig.tableName}`, crudRouter);
+  generateCrudRoutes(crudRouter, entity);
+  app.use(`/api/${entity.dbConfig.tableName}`, crudRouter);
 });
 
 // Routes
 app.use("/health-check", healthCheckRouter);
 
 // Swagger UI
-app.use(openAPIRouter);
+app.use("/api-docs", openAPIRouter);
 
 // Error handlers
 app.use(errorHandler());

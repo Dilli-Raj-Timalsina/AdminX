@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { IEntity, IEntityField } from "@/types/entity";
+import { IEntity } from "@/types/entity";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -26,16 +26,16 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
-interface FormBuilderProps {
+type FormBuilderProps = {
   entity: IEntity;
   initialData?: Record<string, any>;
-  onSubmit: (data: Record<string, any>) => Promise<void>;
-}
+  handleSubmit: (data: Record<string, any>) => Promise<void>;
+};
 
 export function FormBuilder({
   entity,
   initialData,
-  onSubmit,
+  handleSubmit,
 }: FormBuilderProps) {
   const [loading, setLoading] = useState(false);
 
@@ -48,21 +48,43 @@ export function FormBuilder({
 
       let fieldSchema: any = z.any();
 
-      switch (field.dbConfig.type) {
-        case "boolean":
+      switch (field.inputOptions.type) {
+        case "checkbox":
           fieldSchema = z.boolean();
           break;
-        case "integer":
-        case "smallint":
-        case "float":
+        case "text":
+          fieldSchema = z.string();
+          break;
+        case "textarea":
+          fieldSchema = z.string();
+          break;
+        case "select":
+          fieldSchema = z.string();
+          break;
+        case "multi-select":
+          fieldSchema = z.array(z.string());
+          break;
+        case "json":
+          fieldSchema = z.object({});
+          break;
+        case "number":
           fieldSchema = z.number();
+          break;
+        case "date":
+          fieldSchema = z.date();
+          break;
+        case "uuid":
+          fieldSchema = z.string();
           break;
         default:
           fieldSchema = z.string();
       }
 
       if (field.inputOptions.required) {
-        fieldSchema = fieldSchema.min(1, "This field is required");
+        fieldSchema = fieldSchema.min(
+          1,
+          `${field.inputOptions.label} is required`
+        );
       } else {
         fieldSchema = fieldSchema.optional();
       }
@@ -77,7 +99,7 @@ export function FormBuilder({
         );
       }
 
-      schema[field.key] = fieldSchema;
+      schema[field.dbConfig.columnName] = fieldSchema;
     });
 
     return z.object(schema);
@@ -88,32 +110,27 @@ export function FormBuilder({
     defaultValues: initialData || {},
   });
 
-  const handleSubmit = async (data: Record<string, any>) => {
-    try {
-      setLoading(true);
-      await onSubmit(data);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const renderTextField = (field: IEntity["fields"][0]) => (
+  const renderTextField = (entityField: IEntity["fields"][0]) => (
     <FormField
-      key={field.key}
+      key={entityField.key}
       control={form.control}
-      name={field.key}
-      render={({ field: formField }) => (
+      name={entityField.dbConfig.columnName}
+      render={({ field }) => (
         <FormItem>
-          <FormLabel>{field.inputOptions.label}</FormLabel>
+          <FormLabel>{entityField.inputOptions.label}</FormLabel>
           <FormControl>
             <Input
-              {...formField}
-              placeholder={field.inputOptions.placeholder}
+              key={entityField.key}
+              {...field}
+              placeholder={entityField.inputOptions.placeholder}
               disabled={loading}
+              value={field.value || ""}
             />
           </FormControl>
-          {field.inputOptions.helpText && (
-            <FormDescription>{field.inputOptions.helpText}</FormDescription>
+          {entityField.inputOptions.helpText && (
+            <FormDescription>
+              {entityField.inputOptions.helpText}
+            </FormDescription>
           )}
           <FormMessage />
         </FormItem>
@@ -121,23 +138,27 @@ export function FormBuilder({
     />
   );
 
-  const renderTextareaField = (field: IEntity["fields"][0]) => (
+  const renderTextareaField = (entityField: IEntity["fields"][0]) => (
     <FormField
-      key={field.key}
+      key={entityField.key}
       control={form.control}
-      name={field.key}
-      render={({ field: formField }) => (
+      name={entityField.dbConfig.columnName}
+      render={({ field }) => (
         <FormItem>
-          <FormLabel>{field.inputOptions.label}</FormLabel>
+          <FormLabel>{entityField.inputOptions.label}</FormLabel>
           <FormControl>
             <Textarea
-              {...formField}
-              placeholder={field.inputOptions.placeholder}
+              key={entityField.key}
+              {...field}
+              placeholder={entityField.inputOptions.placeholder}
               disabled={loading}
+              value={field.value || ""}
             />
           </FormControl>
-          {field.inputOptions.helpText && (
-            <FormDescription>{field.inputOptions.helpText}</FormDescription>
+          {entityField.inputOptions.helpText && (
+            <FormDescription>
+              {entityField.inputOptions.helpText}
+            </FormDescription>
           )}
           <FormMessage />
         </FormItem>
@@ -145,23 +166,31 @@ export function FormBuilder({
     />
   );
 
-  const renderCheckboxField = (field: IEntity["fields"][0]) => (
+  const renderCheckboxField = (entityField: IEntity["fields"][0]) => (
     <FormField
-      key={field.key}
+      key={entityField.key}
       control={form.control}
-      name={field.key}
-      render={({ field: formField }) => (
-        <FormItem>
-          <FormLabel>{field.inputOptions.label}</FormLabel>
-          <FormControl>
-            <Checkbox
-              checked={formField.value}
-              onCheckedChange={formField.onChange}
-              disabled={loading}
-            />
-          </FormControl>
-          {field.inputOptions.helpText && (
-            <FormDescription>{field.inputOptions.helpText}</FormDescription>
+      name={entityField.dbConfig.columnName}
+      render={({ field }) => (
+        <FormItem className="">
+          <div className="flex items-center justify-start gap-2">
+            <FormLabel>{entityField.inputOptions.label}</FormLabel>
+            <FormControl>
+              <Checkbox
+                key={entityField.key}
+                {...field}
+                checked={field.value || false}
+                onCheckedChange={(checked) => {
+                  field.onChange(checked === true);
+                }}
+                disabled={loading}
+              />
+            </FormControl>
+          </div>
+          {entityField.inputOptions.helpText && (
+            <FormDescription>
+              {entityField.inputOptions.helpText}
+            </FormDescription>
           )}
           <FormMessage />
         </FormItem>
@@ -169,25 +198,28 @@ export function FormBuilder({
     />
   );
 
-  const renderSelectField = (field: IEntity["fields"][0]) => (
+  const renderSelectField = (entityField: IEntity["fields"][0]) => (
     <FormField
-      key={field.key}
+      key={entityField.key}
       control={form.control}
-      name={field.key}
-      render={({ field: formField }) => (
+      name={entityField.dbConfig.columnName}
+      render={({ field }) => (
         <FormItem>
-          <FormLabel>{field.inputOptions.label}</FormLabel>
+          <FormLabel>{entityField.inputOptions.label}</FormLabel>
           <FormControl>
             <Select
-              value={formField.value}
-              onValueChange={formField.onChange}
+              key={entityField.key}
+              value={field.value || ""}
+              onValueChange={field.onChange}
               disabled={loading}
             >
               <SelectTrigger>
-                <SelectValue placeholder={field.inputOptions.placeholder} />
+                <SelectValue
+                  placeholder={entityField.inputOptions.placeholder}
+                />
               </SelectTrigger>
               <SelectContent>
-                {field.inputOptions.selectOptions?.map((option) => (
+                {entityField.inputOptions.selectOptions?.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>
@@ -195,8 +227,10 @@ export function FormBuilder({
               </SelectContent>
             </Select>
           </FormControl>
-          {field.inputOptions.helpText && (
-            <FormDescription>{field.inputOptions.helpText}</FormDescription>
+          {entityField.inputOptions.helpText && (
+            <FormDescription>
+              {entityField.inputOptions.helpText}
+            </FormDescription>
           )}
           <FormMessage />
         </FormItem>
@@ -204,29 +238,30 @@ export function FormBuilder({
     />
   );
 
-  const renderField = (field: IEntity["fields"][0]) => {
-    if (field.inputOptions.hidden || field.inputOptions.readOnly) return null;
-
-    switch (field.inputOptions.type) {
+  const renderField = (entityField: IEntity["fields"][0]) => {
+    if (entityField.inputOptions.hidden || entityField.inputOptions.readOnly)
+      return null;
+    switch (entityField.inputOptions.type) {
       case "text":
-        return renderTextField(field);
+        return renderTextField(entityField);
       case "textarea":
-        return renderTextareaField(field);
+        return renderTextareaField(entityField);
       case "checkbox":
-        return renderCheckboxField(field);
+        return renderCheckboxField(entityField);
       case "select":
-        return renderSelectField(field);
+        return renderSelectField(entityField);
+
       default:
         return null;
     }
   };
 
   return (
-    <div>
+    <div className="max-w-lg mx-auto">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8 ">
           {entity.fields.map(renderField)}
-          <Button type="submit" disabled={loading}>
+          <Button type="submit" isLoading={loading}>
             {loading ? "Saving..." : "Save"}
           </Button>
         </form>

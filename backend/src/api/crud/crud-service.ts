@@ -4,7 +4,7 @@ import { StatusCodes } from "http-status-codes";
 import { ServiceResponse } from "@/common/models/service-response";
 import { logger } from "@/server";
 import { generateTableDefinition } from "./helpers/generate-table-defination";
-import { Client } from "./entity/client.entity";
+import { IEntity } from "@/types/entity";
 
 const pool = new Pool({
   user: process.env.DB_USERNAME,
@@ -15,10 +15,23 @@ const pool = new Pool({
 });
 
 export class CrudService {
-  async findAll(req: Request, res: Response) {
+  async findAll(req: Request, res: Response, tableName: string) {
     const query = req.query;
-    const tableName = "clients";
     try {
+         const tableCheckQuery = `
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_name = $1
+        )
+      `;
+      const tableExistsResult = await pool.query(tableCheckQuery, [tableName]);
+      const tableExists = tableExistsResult.rows[0].exists;
+
+      if (!tableExists) {
+        return res
+          .status(StatusCodes.NOT_FOUND)
+          .json(ServiceResponse.failure("Table not found", null));
+      }
       let sqlQuery = `SELECT * FROM ${tableName}`;
       const queryParams: any[] = [];
       if (Object.keys(query).length > 0) {
@@ -35,13 +48,12 @@ export class CrudService {
       logger.error(`Error in findAll: ${(error as Error).message}`);
       return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .json(ServiceResponse.failure("Failed to fetch records", null));
+        .json(ServiceResponse.failure(`Error in findAll: ${(error as Error).message}`, null));
     }
   }
 
-  async findById(req: Request, res: Response) {
+  async findById(req: Request, res: Response, tableName: string) {
     const { id } = req.params;
-    const tableName = "clients";
     try {
       const result = await pool.query(
         `SELECT * FROM ${tableName} WHERE id = $1`,
@@ -57,14 +69,13 @@ export class CrudService {
       logger.error(`Error in findById: ${(error as Error).message}`);
       return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .json(ServiceResponse.failure("Failed to fetch record", null));
+        .json(ServiceResponse.failure(`Error in findById: ${(error as Error).message}`, null));
     }
   }
 
-  async create(req: Request, res: Response) {
+  async create(req: Request, res: Response, tableName: string, entity: IEntity) {
     const data = req.body;
     try {
-      const tableName = "clients";
       const tableCheckQuery = `
         SELECT EXISTS (
           SELECT FROM information_schema.tables 
@@ -75,7 +86,7 @@ export class CrudService {
       const tableExists = tableExistsResult.rows[0].exists;
 
       if (!tableExists) {
-        const createTableQuery = generateTableDefinition(Client);
+        const createTableQuery = generateTableDefinition(entity);
         await pool.query(createTableQuery);
       }
 
@@ -96,15 +107,14 @@ export class CrudService {
       logger.error(`Error in create: ${(error as Error).message}`);
       return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .json(ServiceResponse.failure("Failed to create record", null));
+        .json(ServiceResponse.failure(`Error in create: ${(error as Error).message}`, null));
     }
   }
 
-  async update(req: Request, res: Response) {
+  async update(req: Request, res: Response, tableName: string) {
     const { id } = req.params;
     const data = req.body;
     try {
-      const tableName = "clients";
       const setClause = Object.keys(data)
         .map((key, i) => `${key} = $${i + 1}`)
         .join(", ");
@@ -120,6 +130,7 @@ export class CrudService {
           .status(StatusCodes.NOT_FOUND)
           .json(ServiceResponse.failure("Record not found", null));
       }
+      console.log('res success')
       return res.json(
         ServiceResponse.success("Record updated", result.rows[0])
       );
@@ -127,14 +138,14 @@ export class CrudService {
       logger.error(`Error in update: ${(error as Error).message}`);
       return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .json(ServiceResponse.failure("Failed to update record", null));
+        .json(ServiceResponse.failure(`Error in update: ${(error as Error).message}`, null));
     }
   }
 
-  async delete(req: Request, res: Response) {
+  async delete(req: Request, res: Response, tableName: string) {
     const { id } = req.params;
     try {
-      const tableName = "clients";
+    
       const result = await pool.query(
         `DELETE FROM ${tableName} WHERE id = $1 RETURNING *`,
         [id]
@@ -149,7 +160,7 @@ export class CrudService {
       logger.error(`Error in delete: ${(error as Error).message}`);
       return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .json(ServiceResponse.failure("Failed to delete record", null));
+        .json(ServiceResponse.failure(`Error in delete: ${(error as Error).message}`, null));
     }
   }
 }

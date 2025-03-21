@@ -19,11 +19,18 @@ export const validateRequest =
   ) =>
   (req: Request, res: Response, next: NextFunction) => {
     try {
+      console.log(req.body, 'req.body')
+      console.log(req.query, 'req.query')
+      console.log(req.params, 'req.params')
+    
+      console.log(req.params, 'req.params')
       bodySchema && bodySchema.parse({ ...req.body });
       querySchema && querySchema.parse({ ...req.query });
-      paramsSchema && paramsSchema.parse({ ...req.params });
+      paramsSchema && paramsSchema.parse({params: req.params });
+      console.log(req.params, 'req.params')
       next();
     } catch (err) {
+      console.log(err,'error')
       const errorMessage = `Invalid input: ${(err as ZodError).errors
         .map((e) => e.message)
         .join(", ")}`;

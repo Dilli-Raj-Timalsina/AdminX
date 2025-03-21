@@ -26,7 +26,7 @@ export const UserEntity: IEntity = {
       inputOptions: {
         type: "text",
         label: "ID",
-        readOnly: true,
+            readOnly: false,
       },
     },
     {

@@ -52,7 +52,7 @@ const mapFieldTypeToZod = (
       });
       break;
     case "uuid":
-      schema = z.string().uuid();
+      schema = z.string();
       break;
     default:
       throw new Error(`unsupported type: ${type}`);
