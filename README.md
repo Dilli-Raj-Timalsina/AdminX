@@ -1,15 +1,15 @@
-# DynamicAPI
+# AdminX
 
 A powerful and flexible API generator that automatically creates database tables and CRUD endpoints from entity definitions.
 
-![DynamicAPI](https://img.shields.io/badge/DynamicAPI-1.0.0-blue)
+![AdminX](https://img.shields.io/badge/AdminX-1.0.0-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue)
 ![Express](https://img.shields.io/badge/Express-4.x-green)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14.x-blue)
 
 ## Description
 
-DynamicAPI is a powerful backend framework built with Express.js that automatically generates database tables and CRUD endpoints from entity definitions. Simply define your data model once, and the system will create PostgreSQL tables, validation schemas, and RESTful API endpoints with proper documentation. The architecture follows a code-first approach where entity definitions drive the entire API lifecycle, making development faster and more consistent. This system is designed for rapid application development while maintaining type safety, validation, and comprehensive documentation throughout.
+AdminX is a powerful backend framework built with Express.js that automatically generates database tables and CRUD endpoints from entity definitions. Simply define your data model once, and the system will create PostgreSQL tables, validation schemas, and RESTful API endpoints with proper documentation. The architecture follows a code-first approach where entity definitions drive the entire API lifecycle, making development faster and more consistent. This system is designed for rapid application development while maintaining type safety, validation, and comprehensive documentation throughout.
 
 ## Features
 
