@@ -1,6 +1,6 @@
 # AdminX
 
-A powerful and flexible API generator that automatically creates database tables and CRUD endpoints from entity definitions.
+A powerful and flexible API generator that automatically creates database tables, CRUD endpoints and Admin Panel for UI from entity definitions.
 
 ![AdminX](https://img.shields.io/badge/AdminX-1.0.0-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue)
